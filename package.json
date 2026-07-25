@@ -67,5 +67,8 @@
 		"gaxios": {
 			"rimraf": "6.1.2"
 		}
+	},
+	"dependencies": {
+		"@typescript/native-preview-linux-x64": "7.0.0-dev.20260707.2"
 	}
 }
