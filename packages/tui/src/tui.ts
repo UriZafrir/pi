@@ -1456,11 +1456,30 @@ export class TUI extends Container {
 		}
 
 		// Differential rendering can only touch what was actually visible.
-		// If the first changed line is above the previous viewport, we need a full redraw.
+		// If the first changed line is above the previous viewport, we need to decide:
+		// - Content shrank and viewport must move up -> genuine full redraw
+		// - All changes are above viewport -> skip, viewport stays put
+		// - Changes span viewport boundary -> clamp and render visible portion
 		if (firstChanged < prevViewportTop) {
-			logRedraw(`firstChanged < viewportTop (${firstChanged} < ${prevViewportTop})`);
-			fullRender(true);
-			return;
+			const newViewportTop = Math.max(0, newLines.length - height);
+			if (newViewportTop < prevViewportTop) {
+				logRedraw(`firstChanged < viewportTop with shrink (${firstChanged} < ${prevViewportTop})`);
+				fullRender(true);
+				return;
+			}
+
+			if (lastChanged < prevViewportTop) {
+				logRedraw(`firstChanged < viewportTop, skipping (${firstChanged} < ${prevViewportTop})`);
+				this.positionHardwareCursor(cursorPos, newLines.length);
+				this.previousLines = newLines;
+				this.previousKittyImageIds = this.collectKittyImageIds(newLines);
+				this.previousWidth = width;
+				this.previousHeight = height;
+				this.previousViewportTop = prevViewportTop;
+				return;
+			}
+
+			firstChanged = prevViewportTop;
 		}
 
 		// Render from first changed line to end
